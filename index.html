@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Corredor PRO - Multilink & Cruceta</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #002D72; color: #fff; display: flex; justify-content: center; padding: 20px; margin: 0; min-height: 100vh; align-items: flex-start; }
+        
+        /* --- ESTILOS SISTEMA PRO --- */
+        .main-card { background: #ffffff; padding: 25px; border-radius: 20px; width: 100%; max-width: 520px; border-top: 10px solid #0033A0; color: #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-top: 20px; margin-bottom: 20px;}
+        .escudo-container { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #0033A0; padding-bottom: 10px; }
+        .escudo-img { max-width: 100px; max-height: 100px; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.1)); }
+        h1 { color: #0033A0; text-align: center; margin: 5px 0; font-size: 1.5em; text-transform: uppercase; font-weight: 900; }
+        
+        #loginSection { text-align: center; padding: 10px 0; }
+        .error { color: #d93025; font-weight: bold; font-size: 0.8em; margin-bottom: 10px; }
+        .hidden { display: none !important; }
+
+        .game-selector { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 20px; }
+        .game-opt { flex: 1 1 30%; background: #f0f4f8; border: 2px solid #d1d9e6; border-radius: 10px; padding: 12px 5px; text-align: center; cursor: pointer; font-size: 0.75em; font-weight: bold; color: #0033A0; transition: 0.3s; }
+        .game-opt.active { background: #0033A0; color: #fff; border-color: #001A50; transform: scale(1.05); }
+
+        input { width: 100%; padding: 12px; border: 2px solid #0033A0; border-radius: 10px; font-size: 16px; margin-bottom: 15px; outline: none; text-align: center;}
+        button { width: 100%; padding: 16px; background: #0033A0; color: #fff; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
+        button:hover { background: #001A50; }
+        .btn-logout { background-color: #d93025; margin-top: 15px; font-size: 14px; padding: 12px;}
+        .btn-logout:hover { background-color: #b0231b; }
+        
+        /* --- CAJA RESULTADOS PRO --- */
+        .result-box { position: relative; background-color: #ffffff; border-radius: 12px; padding: 30px 20px; margin-top: 20px; border: 2px solid #0033A0; text-align: center; min-height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .result-box::before { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: url('runa.jpg'); background-repeat: no-repeat; background-position: center; background-size: contain; opacity: 0; z-index: 0; transition: opacity 0.5s ease-in-out; }
+        .mostrar-runa::before { opacity: 0.3; animation: latido 1.5s ease-out forwards; }
+        
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 80% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes latido { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.1); opacity: 0.5; } 100% { transform: scale(1); opacity: 0.3; } }
+        .animar-resultado { animation: popIn 0.5s ease-out forwards; }
+
+        .val-4c, .series-5, .val-signo, .sb-circle, .btn-apuesta, .msg-error, .footer-info { position: relative; z-index: 1; }
+        .val-4c { font-size: 3.5em; font-weight: bold; letter-spacing: 10px; color: #0033A0; text-shadow: 2px 2px 5px rgba(255,255,255,0.9), 0 0 10px #ffffff; }
+        .series-5 { font-size: 1.8em; color: #0033A0; font-weight: bold; text-shadow: 2px 2px 5px rgba(255,255,255,0.9), 0 0 10px #ffffff; }
+        .sb-circle { background: #d93025; color: white; border-radius: 50%; width: 50px; height: 50px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-top: 15px; border: 3px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-size: 1.2em; }
+        .val-signo { font-size: 1.8em; color: #d93025; font-weight: bold; text-transform: uppercase; margin-top: 10px; text-shadow: 1px 1px 3px #fff;}
+        .msg-error { color: #d93025; font-weight: bold; font-size: 1.5em; }
+        .footer-info { font-size: 0.8em; text-align: center; color: #555; margin-top: 15px; font-style: italic; font-weight: bold;}
+
+        .btn-apuesta { display: inline-block; margin-top: 15px; padding: 12px 20px; color: white; text-decoration: none; border-radius: 25px; font-weight: bold; font-size: 0.85em; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: none; cursor: pointer; width: 90%; text-align: center;}
+        .btn-baloto { background-color: #00a650; } 
+        .btn-pagatodo { background-color: #f39200; } 
+        .btn-lotto-buy { background-color: #d93025; color: #fff; } 
+        .btn-apuesta:hover { opacity: 0.9; transform: scale(1.05); }
+        
+        .btn-cruceta { width: 100%; display: block; box-sizing: border-box; margin-top: 15px;}
+
+        /* --- ESTILOS MÓDULO CRUCETA V3 --- */
+        .cruceta-wrapper { background: #0f172a; padding: 25px 20px; border-radius: 15px; margin-top: 20px; color: #f8fafc; }
+        .cruceta-wrapper h2 { font-size: 1.4rem; color: #38bdf8; text-align: center; margin-top: 0; margin-bottom: 5px;}
+        .cruceta-wrapper p.subtitle { color: #94a3b8; font-size: 0.85rem; text-align: center; margin-bottom: 20px; }
+        
+        .input-group-c label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: #0033A0; text-transform: uppercase; font-weight: bold; text-align: center;}
+        
+        .cruceta-container { margin: 0 auto 30px auto; position: relative; width: 240px; height: 240px; }
+        .cruceta-box { width: 100%; height: 100%; background: radial-gradient(circle, #1e3a8a 0%, #0f172a 100%); border-radius: 50%; border: 3px solid #38bdf8; position: relative; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 20px rgba(56, 189, 248, 0.2); }
+        .cruceta-box::before, .cruceta-box::after { content: ''; position: absolute; background: rgba(56, 189, 248, 0.15); border-radius: 4px; }
+        .cruceta-box::before { width: 85%; height: 6px; transform: rotate(45deg); }
+        .cruceta-box::after { width: 85%; height: 6px; transform: rotate(-45deg); }
+
+        .num { position: absolute; font-size: 2rem; font-weight: 900; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.8); z-index: 2; }
+        .n-top    { top: 10px; left: 50%; transform: translateX(-50%); color: #f43f5e; }
+        .n-left   { left: 20px; top: 50%; transform: translateY(-50%); color: #eab308; }
+        .n-right  { right: 20px; top: 50%; transform: translateY(-50%); color: #eab308; }
+        .n-bottom { bottom: 10px; left: 50%; transform: translateX(-50%); color: #f43f5e; }
+        .n-itleft  { top: 60px; left: 60px; color: #60a5fa; }
+        .n-itright { top: 60px; right: 60px; color: #34d399; }
+        .n-ibleft  { bottom: 60px; left: 60px; color: #a78bfa; }
+        .n-ibright { bottom: 60px; right: 60px; color: #f472b6; }
+
+        .results-section { background: #1e293b; padding: 15px; border-radius: 10px; margin-bottom: 12px; border-left: 4px solid #38bdf8; }
+        .results-section.chance { border-left-color: #f43f5e; }
+        .results-section.miloto { border-left-color: #34d399; }
+        .results-section.baloto { border-left-color: #eab308; }
+        .results-section.canada { border-left-color: #a855f7; }
+
+        .results-section h3 { font-size: 0.9rem; color: #f1f5f9; margin-top:0; margin-bottom: 10px; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center;}
+        .results-section h3 span { font-size: 0.75rem; color: #94a3b8; text-transform: none;}
+
+        .balls-grid { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-start;}
+        .ball { background: #0f172a; color: #fff; font-weight: bold; font-size: 1rem; padding: 6px 12px; border-radius: 6px; border: 1px solid #334155; text-align: center; min-width: 40px;}
+        .ball.special { background: #eab308; color: #000; border-color: #facc15; box-shadow: 0 0 8px rgba(234, 179, 8, 0.4); }
+
+        .chance-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .chance-card { background: #0f172a; padding: 8px; border-radius: 6px; text-align: center; border: 1px solid #334155; }
+        .chance-card .label { font-size: 0.65rem; color: #94a3b8; margin-bottom: 4px; }
+        .chance-card .val { font-size: 1.1rem; font-weight: bold; color: #f43f5e; letter-spacing: 2px;}
+
+    </style>
+</head>
+<body>
+
+<div class="main-card">
+    <div class="escudo-container">
+        <img src="escudo_corredor.png" alt="Escudo" class="escudo-img" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/e/e0/Millonarios_F._C._escudo.svg';">
+    </div>
+
+    <div id="loginSection">
+        <h1>Acceso Único</h1>
+        <div id="errorMsg" class="error"></div>
+        <input type="text" id="userIn" placeholder="Usuario">
+        <input type="password" id="passIn" placeholder="Contraseña">
+        <button onclick="validarInterno()" id="btnIngresar">INGRESAR</button>
+    </div>
+
+    <div id="appSection" class="hidden">
+        <h1>Sistema Ganador</h1>
+        <div class="game-selector">
+            <div class="game-opt active" id="opt1" onclick="setGame(1)">CHANCE</div>
+            <div class="game-opt" id="opt4" onclick="setGame(4)">ATRAYENTE</div>
+            <div class="game-opt" id="opt2" onclick="setGame(2)">BALOTO</div>
+            <div class="game-opt" id="opt3" onclick="setGame(3)">ASTRO</div>
+            <div class="game-opt" id="opt5" onclick="setGame(5)">MILOTO</div>
+            <div class="game-opt" id="opt6" onclick="setGame(6)">CANADÁ</div>
+            <div class="game-opt" id="opt7" onclick="setGame(7)">CRUCETA V3</div>
+        </div>
+
+        <input type="number" id="numBase" class="hidden" placeholder="Último Resultado (4 cifras)">
+        
+        <div id="fechaSorteoWrapper" class="hidden input-group-c">
+            <label for="fechaSorteo">Fecha del Análisis (Cruceta)</label>
+            <input type="date" id="fechaSorteo">
+        </div>
+
+        <button id="btnGenerar" onclick="generar()">CALCULAR RESULTADO</button>
+
+        <div id="resultadoArea" class="hidden">
+            <div class="result-box" id="cajaResultado">
+                <div id="valP">----</div>
+                <div id="valS"></div>
+                <a id="linkBaloto" href="https://apuestaaqui.baloto.com/#/seguridad/login" target="_blank" class="btn-apuesta btn-baloto hidden">APOSTAR EN BALOTO/MILOTO</a>
+                <a id="linkPagaTodo" href="https://sucursal.pagatodo.com.co/#login" target="_blank" class="btn-apuesta btn-pagatodo hidden">APOSTAR EN PAGATODO</a>
+                <a id="btnBuyLotto" href="https://www.olg.ca/en/lottery/play-lotto-649.html" target="_blank" class="btn-apuesta btn-lotto-buy hidden">🛒 COMPRAR LOTTO EN LÍNEA</a>
+            </div>
+            <div class="footer-info" id="txtFooter"></div>
+        </div>
+
+        <div id="crucetaArea" class="hidden cruceta-wrapper">
+            <h2>Cruceta de Loterías V3</h2>
+            <p class="subtitle">Estrategia Avanzada de Pronósticos Numerológicos</p>
+
+            <div class="cruceta-container">
+                <div class="cruceta-box">
+                    <div class="num n-top" id="pos0">-</div>
+                    <div class="num n-itright" id="pos1">-</div>
+                    <div class="num n-right" id="pos2">-</div>
+                    <div class="num n-ibright" id="pos3">-</div>
+                    <div class="num n-bottom" id="pos4">-</div>
+                    <div class="num n-ibleft" id="pos5">-</div>
+                    <div class="num n-left" id="pos6">-</div>
+                    <div class="num n-itleft" id="pos7">-</div>
+                </div>
+            </div>
+
+            <div class="results-section chance">
+                <h3>Chance <span>(2, 3 y 4 Cifras)</span></h3>
+                <div class="chance-container">
+                    <div class="chance-card"><div class="label">4 Cifras</div><div class="val" id="ch-4">0000</div></div>
+                    <div class="chance-card"><div class="label">3 Cifras</div><div class="val" id="ch-3">000</div></div>
+                    <div class="chance-card"><div class="label">2 Cifras</div><div class="val" id="ch-2">00</div></div>
+                </div>
+                <a href="https://sucursal.pagatodo.com.co/#login" target="_blank" class="btn-apuesta btn-pagatodo btn-cruceta">APOSTAR EN PAGATODO</a>
+            </div>
+
+            <div class="results-section miloto">
+                <h3>MiLoto <span>(5 del 1 al 39)</span></h3>
+                <div class="balls-grid" id="miloto-balls"></div>
+                <a href="https://apuestaaqui.baloto.com/#/seguridad/login" target="_blank" class="btn-apuesta btn-baloto btn-cruceta">APOSTAR EN MILOTO</a>
+            </div>
+
+            <div class="results-section baloto">
+                <h3>Baloto <span>(5 + Súper Balota)</span></h3>
+                <div class="balls-grid" id="baloto-balls"></div>
+                <a href="https://apuestaaqui.baloto.com/#/seguridad/login" target="_blank" class="btn-apuesta btn-baloto btn-cruceta">APOSTAR EN BALOTO</a>
+            </div>
+
+            <div class="results-section canada">
+                <h3>Lotto Canadá <span>(6 del 1 al 49)</span></h3>
+                <div class="balls-grid" id="canada-balls"></div>
+                <a href="https://www.olg.ca/en/lottery/play-lotto-649.html" target="_blank" class="btn-apuesta btn-lotto-buy btn-cruceta">🛒 COMPRAR LOTTO EN LÍNEA</a>
+            </div>
+        </div>
+
+        <button onclick="cerrarSesion()" class="btn-logout">CERRAR SESIÓN</button>
+    </div>
+</div>
+
+<script>
+    // --- VARIABLES Y CONFIGURACIÓN ---
+    const URL_WEB_APP = "https://script.google.com/macros/s/AKfycbxx0F-Gl-HLY8WGMRtVAfBNOjmItGxdcB3e0wF1_kASXEcko_FMRf4fTlBZriYr6BVB/exec";
+    
+    let num2025 = [25, 2, 43, 21, 32, 14, 41, 5, 9, 12, 37, 33, 36, 4, 40, 28, 16];
+    let sb2025 = [12, 4, 10, 13, 14, 9, 3, 16, 11, 5, 6, 7, 1, 15];
+    let datosMiLoto = { 1: [], 2: [], 4: [], 5: [] };
+    let milotoCaliente = []; 
+    let chanceCaliente = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    let datosAstroWeb = null; 
+
+    const signos = ["Aries", "Tauro", "Géminis", "Cáncer", "Leo", "Virgo", "Libra", "Escorpio", "Sagitario", "Capricornio", "Acuario", "Piscis"];
+    const tablaAtr = {'1':'6','2':'7','3':'5','4':'9','5':'8','6':'1','7':'4','8':'2','9':'0','0':'3'};
+
+    let modo = 1;
+
+    // Configuración inicial de fecha para Cruceta
+    const inputFecha = document.getElementById('fechaSorteo');
+    const tzoffset = (new Date()).getTimezoneOffset() * 60000;
+    const localISODate = (new Date(Date.now() - tzoffset)).toISOString().split('T')[0];
+    inputFecha.value = localISODate;
+
+    // --- AUTO LOGIN AL CARGAR LA PÁGINA ---
+    window.onload = function() {
+        const usuarioGuardado = localStorage.getItem('sysPRO_user');
+        const passGuardada = localStorage.getItem('sysPRO_pass');
+
+        if (usuarioGuardado && passGuardada) {
+            document.getElementById('userIn').value = usuarioGuardado;
+            document.getElementById('passIn').value = passGuardada;
+            validarInterno(); // Intenta acceder automáticamente
+        }
+    };
+
+    // --- FUNCIONES DE AUTENTICACIÓN Y DATOS ---
+    async function extraerEstadisticasAstro() {
+        try {
+            let res = await fetch(URL_WEB_APP + "?accion=astro");
+            let htmlText = await res.text();
+            let parser = new DOMParser();
+            let doc = parser.parseFromString(htmlText, "text/html");
+            let tablas = doc.querySelectorAll('table');
+
+            if (tablas.length >= 5) {
+                const extraerDosUltimos = (tabla) => {
+                    let filas = Array.from(tabla.querySelectorAll('tr')).filter(f => f.querySelectorAll('td').length > 0);
+                    if (filas.length >= 2) {
+                        return [
+                            filas[filas.length - 2].querySelectorAll('td')[0].innerText.trim(),
+                            filas[filas.length - 1].querySelectorAll('td')[0].innerText.trim()
+                        ];
+                    }
+                    return ["0", "0"];
+                };
+
+                datosAstroWeb = {
+                    pos1: extraerDosUltimos(tablas[0]), pos2: extraerDosUltimos(tablas[1]),
+                    pos3: extraerDosUltimos(tablas[2]), pos4: extraerDosUltimos(tablas[3]),
+                    sig: extraerDosUltimos(tablas[4])
+                };
+            }
+        } catch(e) { console.error("Error en Astro:", e); }
+    }
+
+    async function validarInterno() {
+        const user = document.getElementById('userIn').value.trim();
+        const pass = document.getElementById('passIn').value.trim();
+        const err = document.getElementById('errorMsg');
+        const btn = document.getElementById('btnIngresar');
+
+        if (!user || !pass) { err.innerText = "POR FAVOR INGRESE USUARIO Y CLAVE"; return; }
+
+        btn.innerText = "VALIDANDO...";
+        btn.disabled = true;
+        err.innerText = "";
+
+        try {
+            const respuesta = await fetch(URL_WEB_APP);
+            const datosDelExcel = await respuesta.json();
+            const USUARIOS_AUTORIZADOS = datosDelExcel.listaUsuarios;
+            
+            if (datosDelExcel.listaNumerosA) num2025 = datosDelExcel.listaNumerosA;
+            if (datosDelExcel.listaNumerosB) sb2025 = datosDelExcel.listaNumerosB;
+            if (datosDelExcel.m1) datosMiLoto[1] = datosDelExcel.m1;
+            if (datosDelExcel.m2) datosMiLoto[2] = datosDelExcel.m2;
+            if (datosDelExcel.m4) datosMiLoto[4] = datosDelExcel.m4;
+            if (datosDelExcel.m5) datosMiLoto[5] = datosDelExcel.m5;
+            if (datosDelExcel.mCal) milotoCaliente = datosDelExcel.mCal;
+            if (datosDelExcel.cCal) chanceCaliente = datosDelExcel.cCal;
+
+            const encontrado = USUARIOS_AUTORIZADOS.find(x => x.u === user && x.c === pass);
+
+            if (encontrado) {
+                const partesFecha = encontrado.v.split('/');
+                let dia = parseInt(partesFecha[0], 10), mes = parseInt(partesFecha[1], 10) - 1, Anio = parseInt(partesFecha[2], 10);
+                if (Anio < 100) Anio += 2000;
+
+                const venc = new Date(Anio, mes, dia);
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0); 
+
+                if (hoy <= venc) {
+                    // GUARDAR CREDENCIALES SI TODO ES CORRECTO
+                    localStorage.setItem('sysPRO_user', user);
+                    localStorage.setItem('sysPRO_pass', pass);
+
+                    document.getElementById('loginSection').classList.add('hidden');
+                    document.getElementById('appSection').classList.remove('hidden');
+                    extraerEstadisticasAstro();
+                } else {
+                    err.innerText = "ACCESO VENCIDO EL " + encontrado.v;
+                    localStorage.removeItem('sysPRO_user'); // Borrar si está vencido
+                    localStorage.removeItem('sysPRO_pass');
+                }
+            } else {
+                err.innerText = "USUARIO O CLAVE INCORRECTOS";
+                localStorage.removeItem('sysPRO_user'); // Borrar si se cambiaron los datos mal
+                localStorage.removeItem('sysPRO_pass');
+            }
+        } catch (error) {
+            err.innerText = "ERROR DE CONEXIÓN. INTENTE DE NUEVO.";
+        } finally {
+            btn.innerText = "INGRESAR";
+            btn.disabled = false;
+        }
+    }
+
+    // --- FUNCIÓN PARA CERRAR SESIÓN ---
+    function cerrarSesion() {
+        localStorage.removeItem('sysPRO_user');
+        localStorage.removeItem('sysPRO_pass');
+        location.reload(); // Recarga la página para volver al login
+    }
+
+    // --- NAVEGACIÓN Y CONTROL UI ---
+    function setGame(m) {
+        modo = m;
+        document.querySelectorAll('.game-opt').forEach(el => el.classList.remove('active'));
+        document.getElementById('opt' + m).classList.add('active');
+        
+        // Manejo de Inputs visuales
+        document.getElementById('numBase').classList.toggle('hidden', m !== 4);
+        document.getElementById('fechaSorteoWrapper').classList.toggle('hidden', m !== 7);
+        
+        // Ocultar todas las áreas de resultado hasta que se genere
+        document.getElementById('resultadoArea').classList.add('hidden');
+        document.getElementById('crucetaArea').classList.add('hidden');
+        
+        const caja = document.getElementById('cajaResultado');
+        caja.classList.remove('animar-resultado', 'mostrar-runa');
+    }
+
+    function generar() {
+        if (modo === 7) {
+            document.getElementById('crucetaArea').classList.remove('hidden');
+            document.getElementById('resultadoArea').classList.add('hidden');
+            procesarEstrategiaCruceta();
+        } else {
+            document.getElementById('resultadoArea').classList.remove('hidden');
+            document.getElementById('crucetaArea').classList.add('hidden');
+            ejecutarLogicaPro();
+        }
+    }
+
+    // --- LÓGICA SISTEMA PRO ---
+    function ejecutarLogicaPro() {
+        const caja = document.getElementById('cajaResultado');
+        
+        caja.classList.remove('animar-resultado', 'mostrar-runa');
+        void caja.offsetWidth; // Forzar reinicio animación
+        caja.classList.add('animar-resultado', 'mostrar-runa');
+
+        const valP = document.getElementById('valP');
+        const valS = document.getElementById('valS');
+        const foot = document.getElementById('txtFooter');
+        
+        document.getElementById('linkBaloto').classList.add('hidden');
+        document.getElementById('linkPagaTodo').classList.add('hidden');
+        document.getElementById('btnBuyLotto').classList.add('hidden');
+        
+        valS.innerHTML = "";
+        valP.className = "val-4c";
+
+        const hoy = new Date();
+        const diaSemana = hoy.getDay();
+
+        if (modo === 6) { // LOTTO CANADÁ
+            let res = [];
+            while(res.length < 6) {
+                let n = Math.floor(Math.random() * 49) + 1; 
+                if(!res.includes(n)) res.push(n);
+            }
+            valP.className = "series-5";
+            valP.innerText = res.sort((a,b)=>a-b).join(" - ");
+            foot.innerText = "Sistema Lotto 6/49 (Canadá)";
+            document.getElementById('btnBuyLotto').classList.remove('hidden');
+        }
+        else if (modo === 5) { // MILOTO
+            if (datosMiLoto[diaSemana] && datosMiLoto[diaSemana].length > 0) {
+                let pool = [...new Set([...datosMiLoto[diaSemana], ...milotoCaliente])];
+                let res = [];
+                while(res.length < 5 && res.length < pool.length) {
+                    let n = pool[Math.floor(Math.random()*pool.length)];
+                    if(!res.includes(n)) res.push(n);
+                }
+                valP.className = "series-5";
+                valP.innerText = res.sort((a,b)=>a-b).join(" - ");
+                foot.innerText = "Basado en día de hoy + Números Calientes";
+                document.getElementById('linkBaloto').classList.remove('hidden');
+            } else {
+                valP.className = "msg-error";
+                valP.innerText = "DÍA NO HÁBIL";
+                foot.innerText = "Solo Lun, Mar, Jue, Vie";
+            }
+        } 
+        else if (modo === 2) { // BALOTO
+            let res = [];
+            while(res.length < 5) {
+                let n = num2025[Math.floor(Math.random()*num2025.length)];
+                if(!res.includes(n)) res.push(n);
+            }
+            valP.className = "series-5";
+            valP.innerText = res.sort((a,b)=>a-b).join(" - ");
+            valS.innerHTML = `<span class="sb-circle">${sb2025[Math.floor(Math.random()*sb2025.length)]}</span>`;
+            foot.innerText = "Tendencias Baloto 2025";
+            document.getElementById('linkBaloto').classList.remove('hidden');
+        } 
+        else if (modo === 4) { // ATRAYENTE
+            let v = document.getElementById('numBase').value, c = "";
+            if(!v) { alert("Ingrese el último resultado"); return; }
+            v.split('').forEach(d => c += tablaAtr[d] || d);
+            valP.innerText = c;
+            foot.innerText = "Atracción numérica inversa";
+            document.getElementById('linkPagaTodo').classList.remove('hidden');
+        } 
+        else if (modo === 3) { // ASTRO
+            if (datosAstroWeb) {
+                let n1 = datosAstroWeb.pos1[Math.floor(Math.random()*2)];
+                let n2 = datosAstroWeb.pos2[Math.floor(Math.random()*2)];
+                let n3 = datosAstroWeb.pos3[Math.floor(Math.random()*2)];
+                let n4 = datosAstroWeb.pos4[Math.floor(Math.random()*2)];
+                let s = datosAstroWeb.sig[Math.floor(Math.random()*2)];
+                valP.innerText = `${n1}${n2}${n3}${n4}`;
+                valS.innerHTML = `<div class="val-signo">${s}</div>`;
+                foot.innerText = "Estadística Astroluna (Demorados)";
+            } else {
+                let res = "";
+                for(let i=0; i<4; i++) res += Math.floor(Math.random()*10);
+                valP.innerText = res;
+                valS.innerHTML = `<div class="val-signo">${signos[Math.floor(Math.random()*signos.length)]}</div>`;
+                foot.innerText = "Sugerencia Astral Aleatoria";
+            }
+            document.getElementById('linkPagaTodo').classList.remove('hidden');
+        } 
+        else { // CHANCE
+            let res = "";
+            for(let i=0; i<4; i++) res += chanceCaliente[Math.floor(Math.random() * chanceCaliente.length)];
+            valP.innerText = res;
+            foot.innerText = "Basado en dígitos calientes (Columna H)";
+            document.getElementById('linkPagaTodo').classList.remove('hidden');
+        }
+    }
+
+    // --- LÓGICA CRUCETA V3 ---
+    function procesarEstrategiaCruceta() {
+        const fechaVal = inputFecha.value;
+        if (!fechaVal) return;
+
+        const partes = fechaVal.split('-');
+        const anio = partes[0];
+        const mes = partes[1];
+        const dia = partes[2];
+
+        const cadena = dia + mes + anio;
+        let sumaTotal = 0;
+        for (let i = 0; i < cadena.length; i++) {
+            sumaTotal += parseInt(cadena[i]);
+        }
+
+        const digitos = [];
+        let baseCalculo = sumaTotal;
+        for (let i = 0; i < 8; i++) {
+            let d = baseCalculo % 10;
+            digitos.push(d);
+            baseCalculo = baseCalculo + parseInt(dia) + (i * 3);
+        }
+
+        for (let i = 0; i < 8; i++) {
+            document.getElementById(`pos${i}`).innerText = digitos[i];
+        }
+
+        document.getElementById('ch-4').innerText = `${digitos[0]}${digitos[1]}${digitos[3]}${digitos[4]}`;
+        document.getElementById('ch-3').innerText = `${digitos[7]}${digitos[2]}${digitos[5]}`;
+        document.getElementById('ch-2').innerText = `${digitos[6]}${digitos[4]}`;
+
+        // MILOTO
+        let poolMiLoto = [];
+        let emparejamientosMiLoto = [`${digitos[0]}${digitos[1]}`,`${digitos[2]}${digitos[3]}`,`${digitos[4]}${digitos[5]}`,`${digitos[6]}${digitos[7]}`,`${digitos[1]}${digitos[6]}`];
+        emparejamientosMiLoto.forEach((p) => {
+            let num = (parseInt(p) % 39) + 1;
+            while(poolMiLoto.includes(num)) { num = (num % 39) + 1; }
+            poolMiLoto.push(num);
+        });
+        poolMiLoto.sort((a, b) => a - b);
+        const milotoContainer = document.getElementById('miloto-balls');
+        milotoContainer.innerHTML = '';
+        poolMiLoto.forEach(n => {
+            const b = document.createElement('div');
+            b.className = 'ball';
+            b.innerText = n < 10 ? '0' + n : n;
+            milotoContainer.appendChild(b);
+        });
+
+        // BALOTO
+        let poolBaloto = [];
+        let emparejamientosBaloto = [`${digitos[7]}${digitos[0]}`,`${digitos[1]}${digitos[2]}`,`${digitos[3]}${digitos[4]}`,`${digitos[5]}${digitos[6]}`,`${digitos[0]}${digitos[4]}`];
+        emparejamientosBaloto.forEach((p) => {
+            let num = (parseInt(p) % 43) + 1;
+            while(poolBaloto.includes(num)) { num = (num % 43) + 1; }
+            poolBaloto.push(num);
+        });
+        poolBaloto.sort((a, b) => a - b);
+        let superBalota = ((digitos[2] + digitos[6] + parseInt(dia)) % 16) + 1;
+        
+        const balotoContainer = document.getElementById('baloto-balls');
+        balotoContainer.innerHTML = '';
+        poolBaloto.forEach(n => {
+            const b = document.createElement('div');
+            b.className = 'ball';
+            b.innerText = n < 10 ? '0' + n : n;
+            balotoContainer.appendChild(b);
+        });
+        const bSuper = document.createElement('div');
+        bSuper.className = 'ball special';
+        bSuper.innerText = superBalota < 10 ? '0' + superBalota : superBalota;
+        balotoContainer.appendChild(bSuper);
+
+        // LOTTO CANADÁ
+        let poolCanada = [];
+        let emparejamientosCanada = [`${digitos[0]}${digitos[2]}`,`${digitos[1]}${digitos[3]}`,`${digitos[4]}${digitos[6]}`,`${digitos[5]}${digitos[7]}`,`${digitos[0]}${digitos[5]}`,`${digitos[2]}${digitos[6]}`];
+        emparejamientosCanada.forEach((p) => {
+            let num = (parseInt(p) % 49) + 1;
+            while(poolCanada.includes(num)) { num = (num % 49) + 1; }
+            poolCanada.push(num);
+        });
+        poolCanada.sort((a, b) => a - b);
+        const canadaContainer = document.getElementById('canada-balls');
+        canadaContainer.innerHTML = '';
+        poolCanada.forEach(n => {
+            const b = document.createElement('div');
+            b.className = 'ball';
+            b.innerText = n < 10 ? '0' + n : n;
+            canadaContainer.appendChild(b);
+        });
+    }
+</script>
+</body>
+</html>
